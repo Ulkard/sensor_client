@@ -6,6 +6,8 @@ find_package(fmt REQUIRED)
 
 set(HEADER_FILES
     sensor_client.h
+    connection_metadata.h
+    websocket_endpoint.h
 )
 
 set(SOURCE_FILES
