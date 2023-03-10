@@ -9,17 +9,19 @@
 void Client::connect()
 {
     fmt::print("connecting uri( {} )", uri_);
-    endpoint_.connect(uri_, websocketpp::lib::bind(
-                          &Client::onMessage,
-                          this,
-                          websocketpp::lib::placeholders::_1,
-                          websocketpp::lib::placeholders::_2
-                          ));
+    endpoint_.connect(uri_);
+    endpoint_.setMessageCallback(websocketpp::lib::bind(
+                           &Client::onMessage,
+                           this,
+                           websocketpp::lib::placeholders::_1,
+                           websocketpp::lib::placeholders::_2
+                           ));
+
 }
 
 void Client::disconnect()
 {
-    endpoint_.reset();
+    endpoint_.disconnect();
 }
 
 bool Client::sensorConnected(const std::string &sensor_name) const
@@ -58,8 +60,8 @@ void Client::onMessage(websocketpp::connection_hdl, WSClient::message_ptr msg)
         fmt::print("bad format msg received: {}", msg->get_payload());
         return;
     }
-
-    fmt::print("event: {} \ndata: {}", json_msg.at("event").as_string(), json_msg.at("data").serialize());
+    fmt::print("---\n");
+    //fmt::print("event: {} \ndata: {}", json_msg.at("event").as_string(), json_msg.at("data").serialize());
 }
 
 bool Client::isValid(const std::string &sensor_name)

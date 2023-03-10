@@ -8,28 +8,29 @@
 
 
 typedef websocketpp::client<websocketpp::config::asio_client> WSClient;
+enum class ConnectionState { CONNECTING, CONNECTED, FAILED, CLOSING, CLOSED };
 
 class connection_metadata {
 public:
     typedef websocketpp::lib::shared_ptr<connection_metadata> ptr;
 
-    connection_metadata(int id, websocketpp::connection_hdl hdl, std::string uri)
-      : m_id(id)
-      , m_hdl(hdl)
-      , m_status("Connecting")
+
+    connection_metadata(websocketpp::connection_hdl hdl, std::string uri)
+      : m_hdl(hdl)
+      , m_status(ConnectionState::CONNECTING)
       , m_uri(uri)
       , m_server("N/A")
     {}
 
     void on_open(WSClient * c, websocketpp::connection_hdl hdl) {
-        m_status = "Open";
+        m_status = ConnectionState::CONNECTED;
 
         WSClient::connection_ptr con = c->get_con_from_hdl(hdl);
         m_server = con->get_response_header("Server");
     }
 
     void on_fail(WSClient * c, websocketpp::connection_hdl hdl) {
-        m_status = "Failed";
+        m_status = ConnectionState::FAILED;
 
         WSClient::connection_ptr con = c->get_con_from_hdl(hdl);
         m_server = con->get_response_header("Server");
@@ -37,7 +38,7 @@ public:
     }
 
     void on_close(WSClient * c, websocketpp::connection_hdl hdl) {
-        m_status = "Closed";
+        m_status = ConnectionState::CLOSED;
         WSClient::connection_ptr con = c->get_con_from_hdl(hdl);
         std::stringstream s;
         s << "close code: " << con->get_remote_close_code() << " ("
@@ -50,39 +51,22 @@ public:
         return m_hdl;
     }
 
-    int get_id() const {
-        return m_id;
-    }
-
-    std::string get_status() const {
+    ConnectionState get_status() const {
         return m_status;
-    }
-
-    void record_sent_message(std::string message) {
-        m_messages.push_back(">> " + message);
     }
 
     friend std::ostream & operator<< (std::ostream & out, connection_metadata const & data){
         out << "> URI: " << data.m_uri << "\n"
-            << "> Status: " << data.m_status << "\n"
+            << "> Status: " << static_cast<int>(data.m_status) << "\n"
             << "> Remote Server: " << (data.m_server.empty() ? "None Specified" : data.m_server) << "\n"
             << "> Error/close reason: " << (data.m_error_reason.empty() ? "N/A" : data.m_error_reason) << "\n";
-        out << "> Messages Processed: (" << data.m_messages.size() << ") \n";
-
-        std::vector<std::string>::const_iterator it;
-        for (it = data.m_messages.begin(); it != data.m_messages.end(); ++it) {
-            out << *it << "\n";
-        }
-
         return out;
     }
 private:
-    int m_id;
     websocketpp::connection_hdl m_hdl;
-    std::string m_status;
+    ConnectionState m_status;
     std::string m_uri;
     std::string m_server;
     std::string m_error_reason;
-    std::vector<std::string> m_messages;
 };
 
