@@ -2,6 +2,7 @@ set(PROJECT_LIB_NAME sensor_client_lib)
 
 
 find_package(Boost COMPONENTS system thread)
+find_package(cpprestsdk REQUIRED)
 find_package(fmt REQUIRED)
 
 set(HEADER_FILES
@@ -26,6 +27,7 @@ target_link_libraries(
     ${PROJECT_LIB_NAME}
     PRIVATE Boost::system
     PRIVATE Boost::thread
+    PRIVATE cpprestsdk::cpprest
     PRIVATE fmt
 )
 

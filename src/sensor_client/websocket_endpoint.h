@@ -48,7 +48,8 @@ public:
         }
     }
 
-    int connect(std::string const & uri) {
+    template<typename F>
+    int connect(std::string const & uri, F msg_callback) {
         websocketpp::lib::error_code ec;
 
         WSClient::connection_ptr con = m_endpoint.get_connection(uri, ec);
@@ -80,12 +81,7 @@ public:
             &m_endpoint,
             websocketpp::lib::placeholders::_1
         ));
-        con->set_message_handler(websocketpp::lib::bind(
-            &connection_metadata::on_message,
-            metadata_ptr,
-            websocketpp::lib::placeholders::_1,
-            websocketpp::lib::placeholders::_2
-        ));
+        con->set_message_handler(msg_callback);
 
         m_endpoint.connect(con);
 

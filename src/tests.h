@@ -7,7 +7,7 @@
 void test_connection(){
     Client client("localhost", 9002);
     client.connect();
-    sleep(10);
+    sleep(30);
     client.disconnect();
 }
 

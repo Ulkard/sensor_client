@@ -4,6 +4,8 @@
 #include <websocketpp/client.hpp>
 #include <iostream>
 
+#include <fmt/core.h>
+
 
 typedef websocketpp::client<websocketpp::config::asio_client> WSClient;
 
@@ -42,14 +44,6 @@ public:
           << websocketpp::close::status::get_string(con->get_remote_close_code())
           << "), close reason: " << con->get_remote_close_reason();
         m_error_reason = s.str();
-    }
-
-    void on_message(websocketpp::connection_hdl, WSClient::message_ptr msg) {
-        if (msg->get_opcode() == websocketpp::frame::opcode::text) {
-            m_messages.push_back("<< " + msg->get_payload());
-        } else {
-            m_messages.push_back("<< " + websocketpp::utility::to_hex(msg->get_payload()));
-        }
     }
 
     websocketpp::connection_hdl get_hdl() const {

@@ -3,7 +3,9 @@
 #include "websocket_endpoint.h"
 
 #include <string>
+#include <unordered_set>
 #include <unordered_map>
+#include <cpprest/json.h>
 
 
 //TODO: add ClientInterface and inherit Client from it?
@@ -24,11 +26,18 @@ public:
     //template<typename CBType, typename... ArgTypes>
     //void registerCallback(const std::string& sensor_name, CBType callback, ArgTypes... args);
     void removeCallback(const std::string& sensor_name);
+    void onMessage(websocketpp::connection_hdl, WSClient::message_ptr msg);
 
 private:
+    using Json = web::json::value;
+    bool isValid(const std::string& sensor_name);
+    bool isValid(const Json& json_msg);
+
+
     websocket_endpoint endpoint_;
     std::string uri_;
 
+    std::unordered_set<std::string> connected_sensors;
     std::unordered_map<std::string, int> dummy_subscriptions_;
 
 };
