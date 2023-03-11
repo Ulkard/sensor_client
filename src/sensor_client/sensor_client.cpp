@@ -6,25 +6,19 @@
 
 
 using Json = web::json::value;
+using namespace web::web_sockets::client;
 
 void Client::connect()
 {
     fmt::print("connecting uri( {} )", uri_);
-    endpoint_.connect(uri_);
-    endpoint_.setMessageCallback(websocketpp::lib::bind(
-                                     &Client::onMessage,
-                                     this,
-                                     websocketpp::lib::placeholders::_1,
-                                     websocketpp::lib::placeholders::_2
-                                     ));
-    //TODO: endpoint seems broken here
-    //send(QUERY::CLIENT_CONNECT, "");
+    ws_client_.connect(uri_).wait();
+    send(QUERY::CLIENT_CONNECT, "");
 }
 
 void Client::disconnect()
 {
     send(QUERY::CLIENT_DISCONNECT, "");
-    endpoint_.disconnect();
+    ws_client_.close().wait();
 }
 
 bool Client::sensorConnected(const std::string &sensor_name)
@@ -54,14 +48,13 @@ void Client::removeCallback(const std::string &sensor_name)
     }
 }
 
-void Client::onMessage(websocketpp::connection_hdl, WSClient::message_ptr msg)
+void Client::onMessage(const ws_client::websocket_incoming_message& msg)
 {
-    if (msg->get_opcode() != websocketpp::frame::opcode::text) {
-        fmt::print("non-text msg received: {}", websocketpp::utility::to_hex(msg->get_payload()));
+    if (msg.message_type() != websocket_message_type::text_message) {
         return;
     }
 
-    const Json json_msg = Json::parse(msg->get_payload());
+    const Json json_msg = Json::parse(msg.extract_string().get());
 
     const std::string& event = json_msg.at("event").as_string();
     const Json& data = json_msg.at("data");
@@ -82,7 +75,11 @@ void Client::onMessage(websocketpp::connection_hdl, WSClient::message_ptr msg)
             connected_sensors.erase(sensor_id);
         }
     }
-    fmt::print("sensors connected: {}\n", connected_sensors.size());
+}
+
+void Client::onClose(websocket_close_status close_status, const utility::string_t &reason, const std::error_code &error)
+{
+    fmt::print("connection closed with status {},\n\t reason: {}, \n\t error: {}\n", close_status, reason, error.message());
 }
 
 bool Client::isValid(const std::string &sensor_name)
@@ -98,24 +95,26 @@ void Client::send(Client::QUERY type, const std::string &content)
     constexpr auto subscribe = R"({{"event": "subscribe_sensor", "data": {{ "sensor_id": "{}" }} }})";
     constexpr auto unsubscribe = R"({{"event": "unsubscribe_sensor", "data": {{ "sensor_id": "{}" }} }})";
 
+    websocket_outgoing_message out_msg;
     switch (type) {
     case QUERY::CLIENT_CONNECT:
-        endpoint_.send(fmt::format(connect, content));
+        out_msg.set_utf8_message(fmt::format(connect, content));
         return;
     case QUERY::CLIENT_DISCONNECT:
-        endpoint_.send(fmt::format(disconnect, content));
+        out_msg.set_utf8_message(fmt::format(disconnect, content));
         return;
     case QUERY::SENSOR_CONNECTION_STATUS:
-        endpoint_.send(fmt::format(sensor_connection_status, content));
+        out_msg.set_utf8_message(fmt::format(sensor_connection_status, content));
         return;
     case QUERY::SUBSCRIBE_SENSOR:
-        endpoint_.send(fmt::format(subscribe, content));
+        out_msg.set_utf8_message(fmt::format(subscribe, content));
         return;
     case QUERY::UNSUBSCRIBE_SENSOR:
-        endpoint_.send(fmt::format(unsubscribe, content));
+        out_msg.set_utf8_message(fmt::format(unsubscribe, content));
         return;
     default:
         throw std::invalid_argument("unknown query type");
     }
 
+    ws_client_.send(out_msg).wait();
 }

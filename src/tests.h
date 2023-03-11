@@ -5,6 +5,7 @@
 
 
 void test_connection() {
+    fmt::print("test_connection:\n");
     Client client("localhost", 9002);
     client.connect();
     sleep(5);
@@ -13,6 +14,7 @@ void test_connection() {
 }
 
 void sequential_calls() {
+    fmt::print("test_sequential_calls:\n");
     Client client("localhost", 9002);
     client.connect();
     client.connect();
@@ -25,6 +27,7 @@ void sequential_calls() {
 }
 
 void test_send() {
+    fmt::print("test_send:\n");
     Client client("localhost", 9002);
     client.connect();
     sleep(5);
@@ -38,6 +41,7 @@ void test_send() {
 }
 
 void test_callback() {
+    fmt::print("test_callback:\n");
     Client client("localhost", 9002);
     client.connect();
     sleep(3);
@@ -55,9 +59,9 @@ void test_callback() {
 }
 
 void run_tests() {
-    //test_connection();
+    test_connection();
     //sequential_calls();
-    //test_send();
+    test_send();
     test_callback();
     fmt::print("tests OK\n");
 }
