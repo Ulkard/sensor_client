@@ -88,6 +88,7 @@ public:
     }
 
     void send(std::string message) {
+        fmt::print(" > {}", message);
         if (!metadata_ptr_) {
             std::cout << "> No connection found " << std::endl;
             return;
