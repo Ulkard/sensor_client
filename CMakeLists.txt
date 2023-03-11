@@ -1,43 +1,27 @@
-cmake_minimum_required(VERSION 3.5)
-
-project(sensor_client_test)
-
-set(CMAKE_CXX_STANDARD 17)
+set(PROJECT_LIB_NAME sensor_client_lib)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Werror -Wno-error=unused-variable \
-    -Wcast-align -Wcast-qual -Wmissing-include-dirs -Wold-style-cast -Woverloaded-virtual \
-    -Wredundant-decls -Wconversion -Wno-sign-conversion -Wswitch-default -Wundef")
-        
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wlogical-op -Wnoexcept -Wstrict-null-sentinel")
-
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10 AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
-        message(WARNING "Disabling noexcept warning error in g++-9 due to compiler bug.")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=noexcept")
-    endif()
-endif()
-
-
-add_subdirectory(src/sensor_client)
-
+find_package(Boost COMPONENTS system)
+find_package(cpprestsdk REQUIRED)
+find_package(fmt REQUIRED)
 
 set(HEADER_FILES
-    src/tests.h
+    src/sensor_client.h
 )
 
 set(SOURCE_FILES
-    src/main.cpp)
+    src/sensor_client.cpp)
 
-add_executable(
-    ${PROJECT_NAME}
+add_library(
+    ${PROJECT_LIB_NAME} STATIC
     ${HEADER_FILES} ${SOURCE_FILES}
 )
 
-
+# Specify libraries to link a library or executable target against
 target_link_libraries(
-    ${PROJECT_NAME}
+    ${PROJECT_LIB_NAME}
+    PRIVATE Boost::system
+    PRIVATE cpprestsdk::cpprest
     PRIVATE fmt
-    PRIVATE sensor_client_lib
 )
 
